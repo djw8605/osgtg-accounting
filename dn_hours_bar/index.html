@@ -1,15 +1,137 @@
 <html>
+
 <head>
+
 <title>
+
 OSG & TG Combined Usage
 </title>
 
+
 </head>
+
 <body>
+<img src="dn_hours_bar"/>
 
 
+<form action="dn_hours_bar" method="get">
+<table border="1">
+<thead>
+<tr>
+<th>
+ Name </th>
+<th>
+ Value </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+endtime</td>
+<td>
+<input value="2011-06-21 23:59:59" name="endtime" type="text">
+</td>
+</tr>
+<tr>
+<td>
+span</td>
+<td>
+<input value="86400" name="span" type="text">
+</td>
+</tr>
+<tr>
+<td>
+facility</td>
+<td>
+<input value=".*" name="facility" type="text">
+</td>
+</tr>
+<tr>
+<td>
+probe</td>
+<td>
+<input value=".*" name="probe" type="text">
+</td>
+</tr>
+<tr>
+<td>
+resource-type</td>
+<td>
+<input value="^Batch$" name="resource-type" type="text">
+</td>
+</tr>
+<tr>
+<td>
+vo</td>
+<td>
+<input value=".*" name="vo" type="text">
+</td>
+</tr>
+<tr>
+<td>
+role</td>
+<td>
+<input value=".*" name="role" type="text">
+</td>
+</tr>
+<tr>
+<td>
+user</td>
+<td>
+<input value=".*" name="user" type="text">
+</td>
+</tr>
+<tr>
+<td>
+starttime</td>
+<td>
+<input value="2011-06-07 00:00:00" name="starttime" type="text">
+</td>
+</tr>
+<tr>
+<td>
+exclude-facility</td>
+<td>
+<input value="NONE|Generic|Obsolete" name="exclude-facility" type="text">
+</td>
+</tr>
+<tr>
+<td>
+exclude-user</td>
+<td>
+<input value="NONE" name="exclude-user" type="text">
+</td>
+</tr>
+<tr>
+<td>
+includeSuccess</td>
+<td>
+<input value="true" name="includeSuccess" type="text">
+</td>
+</tr>
+<tr>
+<td>
+exclude-vo</td>
+<td>
+<input value="unknown|other" name="exclude-vo" type="text">
+</td>
+</tr>
+<tr>
+<td>
+includeFailed</td>
+<td>
+<input value="true" name="includeFailed" type="text">
+</td>
+</tr>
+<tr>
+<td>
+exclude-role</td>
+<td>
+<input value="NONE" name="exclude-role" type="text">
 
 
 
 </body>
+
 </html>
+
