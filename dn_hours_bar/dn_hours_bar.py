@@ -88,7 +88,7 @@ def QueryTG(req, options):
 
     open('/tmp/query', 'w').write(cur.mogrify(" \
     select end_time::date as EndTime, \
-    (p.first_name || ', ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
+    (p.first_name || ' ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
     FROM acct.jobs j \
     LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
     LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
@@ -101,7 +101,7 @@ def QueryTG(req, options):
 
     cur.execute(" \
     select end_time::date as EndTime, \
-    (p.first_name || ', ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
+    (p.first_name || ' ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
     FROM acct.jobs j \
     LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
     LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
