@@ -86,33 +86,22 @@ def QueryTG(req, options):
     connection = psycopg2.connect(host = server, port = port, user = username, password = password, database = database, sslmode='require')
     cur = connection.cursor()
 
-    open('/tmp/query', 'w').write(cur.mogrify(" \
-    select end_time::date as EndTime, \
-    (p.first_name || ' ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
-    FROM acct.jobs j \
-    LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
+    query = """
+    SELECT temptab.EndTime, (p.first_name || ' ' || p.last_name), temptab.walltime \
+    FROM \
+    ( \
+        SELECT end_time::date as EndTime, allocation_breakdown_id, resource_id, sum(COALESCE(processors, nodecount)*wallduration)/3600 as walltime \
+        FROM acct.jobs j WHERE end_time >= %(starttime)s and end_time < %(endtime)s \
+        GROUP by allocation_breakdown_id , EndTime, resource_id \
+    ) AS temptab \
+    LEFT JOIN acct.allocation_breakdown a ON (temptab.allocation_breakdown_id = a.allocation_breakdown_id) \
     LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
-    LEFT JOIN acct.resources r on (r.resource_id = j.resource_id and r.resource_code ~* %(facility)s) \
-    where end_time >= %(starttime)s \
-    AND end_time < %(endtime)s \
-    AND j.allocation_breakdown_id = a.allocation_breakdown_id \
-    AND wallduration > 0 \
-    group by dn, EndTime", options))
+    LEFT JOIN acct.resources r on (r.resource_id = temptab.resource_id and r.resource_code ~* %(facility)s) \
+    """
 
+    open('/tmp/query', 'w').write(cur.mogrify(query, options))
 
-
-    cur.execute(" \
-    select end_time::date as EndTime, \
-    (p.first_name || ' ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
-    FROM acct.jobs j \
-    LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
-    LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
-    LEFT JOIN acct.resources r on (r.resource_id = j.resource_id and r.resource_code ~* %(facility)s) \
-    where end_time >= %(starttime)s \
-    AND end_time < %(endtime)s \
-    AND j.allocation_breakdown_id = a.allocation_breakdown_id \
-    AND wallduration > 0 \
-    group by dn, EndTime", options)
+    cur.execute(query, options)
     
     data = cur.fetchone()
     graph_data = {}
