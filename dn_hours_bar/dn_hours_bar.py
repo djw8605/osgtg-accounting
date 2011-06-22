@@ -6,14 +6,34 @@ import sys,os
 import psycopg2
 import ConfigParser
 import time
+import datetime
 import re
 
-#os.environ['HOME'] = "/tmp/tmp.FrT3902013"
-os.environ['HOME'] = "/tmp/apache-matplot/"
+if __name__ == "__main__":
+    os.environ['HOME'] = "/tmp/tmp.FrT3902013"
+else:
+    os.environ['HOME'] = "/tmp/apache-matplot/"
 #from graphtool.graphs.common_graphs import PieGraph
 from graphtool.graphs.common_graphs import StackedBarGraph, BarGraph
 from graphtool.graphs.graph import TimeGraph
 
+
+default_table = {
+    'starttime':        datetime.datetime.fromtimestamp(time.time()-86400).date(),
+    'endtime':          datetime.datetime.fromtimestamp(time.time()).date(),
+    'span':             '86400',
+    'facility':         '.*',
+    'probe':            '.*',
+    'vo':               '.*',
+    'role':             '.*',
+    'user':             '.*',
+    'exclude-facility': 'NONE|Generic|Obsolete',
+    'exclude-user':     'NONE',
+    'includeSuccess':   'true',
+    'exclude-vo':       'unknown|other',
+    'includeFailed':    'true',
+    'exclude-role':     'NONE'
+}
 
 class TimeBarGraph( TimeGraph, BarGraph ):
     pass
@@ -22,10 +42,25 @@ class TimeStackedBarGraph( TimeGraph, StackedBarGraph ):
     pass
 
 
-def index(req, user):
+def index(**kargs):
 
+    req = kargs['req']
     req.content_type = "image/x-png"
-    QueryTG(req, {'user': user})
+    options = {}
+    for key in default_table:
+        if kargs.has_key(key):
+            if key == 'starttime' or key == 'endtime':
+                try:
+                    #2011-01-21 23:59:59
+                    options[key] = datetime.datetime(*(time.strptime(kargs[key], '%Y-%m-%d %H:%M:%S')[0:6]))
+                except Exception, e:
+                    raise e
+                    options[key] = default_table[key]
+            else:
+                options[key] = kargs[key]
+        else:
+            options[key] = default_table[key]
+    QueryTG(req, options)
 
     
 
@@ -50,18 +85,29 @@ def QueryTG(req, options):
     database = config.get('teragrid', 'database')
     connection = psycopg2.connect(host = server, port = port, user = username, password = password, database = database, sslmode='require')
     cur = connection.cursor()
+    open('/tmp/query', 'w').write(cur.mogrify("select distinct on (job_id) job_id, end_time, dn, wallduration from acct.jobs j, acct.distinguished_names d, acct.allocation_breakdown a \
+    where j.allocation_breakdown_id = a.allocation_breakdown_id and a.person_id = d.person_id \
+    and dn ~* %(user)s \
+    and end_time >= %(starttime)s \
+    and end_time < %(endtime)s \
+    order by job_id desc", options ))
+
     cur.execute("select distinct on (job_id) job_id, end_time, dn, wallduration from acct.jobs j, acct.distinguished_names d, acct.allocation_breakdown a \
     where j.allocation_breakdown_id = a.allocation_breakdown_id and a.person_id = d.person_id \
     and dn ~* %(user)s \
-    order by job_id desc limit 1000;", options )
+    and end_time >= %(starttime)s \
+    and end_time < %(endtime)s \
+    order by job_id desc", options )
     
     data = cur.fetchone()
     graph_data = {}
-    begin_time = time.mktime(data[1].timetuple())
-    end_time = time.mktime(data[1].timetuple())
-    span = 86400
+    begin_time = time.mktime(options['starttime'].timetuple())
+    end_time = time.mktime(options['endtime'].timetuple())
+    span = int(options['span'])
     cn_re = re.compile(".*CN\=([\w|\s|\.|\,]+).*$")
     while data:
+        begin_time = time.mktime(data[1].timetuple())
+        end_time = time.mktime(data[1].timetuple())
         user = cn_re.search(data[2]).group(1)
         if not graph_data.has_key(user):
             graph_data[user] = {}
@@ -73,7 +119,7 @@ def QueryTG(req, options):
             end_time = time_occurred
 
         data = cur.fetchone()
-    open("/tmp/query", 'w').write(str(graph_data))
+    #open("/tmp/query", 'w').write(str(graph_data))
     SBG = TimeStackedBarGraph()
     metadata = {'title':'Wallhours by user', 'starttime': begin_time, 'endtime':end_time, 'span': 86400}
     SBG(graph_data, req, metadata) 
@@ -84,7 +130,8 @@ def QueryTG(req, options):
 
 
 def main():
-    QueryTG({'user':'.*Derek.*'})
+    os.environ['HOME'] = "/tmp/tmp.FrT3902013"
+    QueryTG(None, default_table)
 
 
 if __name__ == "__main__":
