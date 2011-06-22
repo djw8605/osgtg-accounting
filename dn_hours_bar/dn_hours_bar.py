@@ -85,43 +85,49 @@ def QueryTG(req, options):
     database = config.get('teragrid', 'database')
     connection = psycopg2.connect(host = server, port = port, user = username, password = password, database = database, sslmode='require')
     cur = connection.cursor()
-    open('/tmp/query', 'w').write(cur.mogrify("select distinct on (job_id) job_id, end_time, dn, wallduration from acct.jobs j, acct.distinguished_names d, acct.allocation_breakdown a \
-    where j.allocation_breakdown_id = a.allocation_breakdown_id and a.person_id = d.person_id \
-    and dn ~* %(user)s \
-    and end_time >= %(starttime)s \
-    and end_time < %(endtime)s \
-    order by job_id desc", options ))
 
-    cur.execute("select distinct on (job_id) job_id, end_time, dn, wallduration from acct.jobs j, acct.distinguished_names d, acct.allocation_breakdown a \
-    where j.allocation_breakdown_id = a.allocation_breakdown_id and a.person_id = d.person_id \
-    and dn ~* %(user)s \
-    and end_time >= %(starttime)s \
-    and end_time < %(endtime)s \
-    order by job_id desc", options )
+    open('/tmp/query', 'w').write(cur.mogrify(" \
+    select end_time::date as EndTime, \
+    (p.first_name || ', ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
+    FROM acct.jobs j \
+    LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
+    LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
+    where (end_time >= %(starttime)s \
+    AND end_time < %(endtime)s \
+    AND j.allocation_breakdown_id = a.allocation_breakdown_id) \
+    group by dn, EndTime", options))
+
+
+
+    cur.execute(" \
+    select end_time::date as EndTime, \
+    (p.first_name || ', ' || p.last_name) as dn, sum(COALESCE(processors, nodecount)*wallduration)/3600 \
+    FROM acct.jobs j \
+    LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
+    LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
+    where (end_time >= %(starttime)s \
+    AND end_time < %(endtime)s \
+    AND j.allocation_breakdown_id = a.allocation_breakdown_id) \
+    group by dn, EndTime", options)
     
     data = cur.fetchone()
     graph_data = {}
-    begin_time = time.mktime(options['starttime'].timetuple())
-    end_time = time.mktime(options['endtime'].timetuple())
+    begin_time = int(time.mktime(options['starttime'].timetuple()))
+    end_time = int(time.mktime(options['endtime'].timetuple()))
     span = int(options['span'])
-    cn_re = re.compile(".*CN\=([\w|\s|\.|\,]+).*$")
+    #cn_re = re.compile(".*CN\=([\w|\s|\.|\,]+).*$")
     while data:
-        begin_time = time.mktime(data[1].timetuple())
-        end_time = time.mktime(data[1].timetuple())
-        user = cn_re.search(data[2]).group(1)
+        user = data[1]
         if not graph_data.has_key(user):
             graph_data[user] = {}
-        time_occurred = int(time.mktime(data[1].timetuple()) / span) * span
-        graph_data[user][time_occurred] =  data[3]
-        if begin_time > time_occurred:
-            begin_time = time_occurred
-        if end_time < time_occurred:
-            end_time = time_occurred
+        #time_occurred = int(time.mktime(data[1].timetuple()) / span) * span
+        time_occurred = int(time.mktime(data[0].timetuple()))
+        graph_data[user][time_occurred] =  data[2]
 
         data = cur.fetchone()
     #open("/tmp/query", 'w').write(str(graph_data))
     SBG = TimeStackedBarGraph()
-    metadata = {'title':'Wallhours by user', 'starttime': begin_time, 'endtime':end_time, 'span': 86400}
+    metadata = {'title':'Wallhours by user', 'starttime': begin_time, 'endtime':end_time, 'span': int(options['span'])}
     SBG(graph_data, req, metadata) 
 
     
