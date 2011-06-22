@@ -92,7 +92,7 @@ def QueryTG(req, options):
     ( \
         SELECT end_time::date as EndTime, allocation_breakdown_id, resource_id, sum(COALESCE(processors, nodecount)*wallduration)/3600 as walltime \
         FROM acct.jobs j WHERE end_time >= %(starttime)s and end_time < %(endtime)s \
-        GROUP by allocation_breakdown_id , EndTime, resource_id \
+        GROUP by EndTime, allocation_breakdown_id , resource_id \
     ) AS temptab \
     LEFT JOIN acct.allocation_breakdown a ON (temptab.allocation_breakdown_id = a.allocation_breakdown_id) \
     LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
