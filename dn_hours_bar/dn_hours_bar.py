@@ -92,6 +92,7 @@ def QueryTG(req, options):
     FROM acct.jobs j \
     LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
     LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
+    LEFT JOIN acct.resources r on (r.resource_id = j.resource_id and r.resource_code ~* %(facility)s) \
     where (end_time >= %(starttime)s \
     AND end_time < %(endtime)s \
     AND j.allocation_breakdown_id = a.allocation_breakdown_id) \
@@ -105,6 +106,7 @@ def QueryTG(req, options):
     FROM acct.jobs j \
     LEFT JOIN acct.allocation_breakdown a ON ( j.allocation_breakdown_id = a.allocation_breakdown_id ) \
     LEFT JOIN acct.people p ON (a.person_id = p.person_id and (p.first_name || ' ' || p.last_name) ~* %(user)s) \
+    LEFT JOIN acct.resources r on (r.resource_id = j.resource_id and r.resource_code ~* %(facility)s) \
     where (end_time >= %(starttime)s \
     AND end_time < %(endtime)s \
     AND j.allocation_breakdown_id = a.allocation_breakdown_id) \
