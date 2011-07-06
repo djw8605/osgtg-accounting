@@ -90,7 +90,7 @@ def QueryTG(req, options):
     SELECT temptab.EndTime, (p.first_name || ' ' || p.last_name) as dn, sum(temptab.walltime) as walltime \
     FROM \
     ( \
-        SELECT end_time::date as EndTime, allocation_breakdown_id, resource_id, sum(COALESCE(processors::numeric, nodecount::numeric)*wallduration::numeric)/3600 as walltime \
+        SELECT TRUNC(EXTRACT(EPOCH FROM end_time::date) / %(span)s) * %(span)s as EndTime, allocation_breakdown_id, resource_id, sum(COALESCE(processors::numeric, nodecount::numeric)*wallduration::numeric)/3600 as walltime \
         FROM acct.jobs j WHERE end_time >= %(starttime)s and end_time < %(endtime)s \
         GROUP by EndTime, allocation_breakdown_id , resource_id \
     ) AS temptab \
@@ -115,7 +115,7 @@ def QueryTG(req, options):
         if not graph_data.has_key(user):
             graph_data[user] = {}
         #time_occurred = int(time.mktime(data[1].timetuple()) / span) * span
-        time_occurred = int(time.mktime(data[0].timetuple()))
+        time_occurred = data[0] #int(time.mktime(data[0].timetuple()))
         graph_data[user][time_occurred] =  data[2]
 
         data = cur.fetchone()
