@@ -32,7 +32,8 @@ default_table = {
     'includeSuccess':   'true',
     'exclude-vo':       'unknown|other',
     'includeFailed':    'true',
-    'exclude-role':     'NONE'
+    'exclude-role':     'NONE',
+    'title':            'Wallhours by user'
 }
 
 class TimeBarGraph( TimeGraph, BarGraph ):
@@ -121,7 +122,10 @@ def QueryTG(req, options):
         data = cur.fetchone()
     #open("/tmp/query", 'w').write(str(graph_data))
     SBG = TimeStackedBarGraph()
-    metadata = {'title':'Wallhours by user', 'starttime': begin_time, 'endtime':end_time, 'span': int(options['span'])}
+    title = 'Wallhours by user'
+    if options.has_key('title'):
+        title = options['title']
+    metadata = {'title':title, 'starttime': begin_time, 'endtime':end_time, 'span': int(options['span'])}
     SBG(graph_data, req, metadata) 
 
     
