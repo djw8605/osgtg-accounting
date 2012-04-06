@@ -12,7 +12,8 @@ import re
 if __name__ == "__main__":
     os.environ['HOME'] = "/tmp/tmp.FrT3902013"
 else:
-    os.mkdir("/tmp/apache-matplot")
+    if not os.path.exists("/tmp/apache-matplot"):
+        os.mkdirs("/tmp/apache-matplot")
     os.environ['HOME'] = "/tmp/apache-matplot/"
 
 
