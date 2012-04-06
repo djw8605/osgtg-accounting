@@ -12,7 +12,10 @@ import re
 if __name__ == "__main__":
     os.environ['HOME'] = "/tmp/tmp.FrT3902013"
 else:
+    os.mkdir("/tmp/apache-matplot")
     os.environ['HOME'] = "/tmp/apache-matplot/"
+
+
 #from graphtool.graphs.common_graphs import PieGraph
 from graphtool.graphs.common_graphs import StackedBarGraph, BarGraph
 from graphtool.graphs.graph import TimeGraph
